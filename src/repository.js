@@ -1,7 +1,7 @@
 import { get, isString, isPlainObject } from 'lodash'
 import axios from 'axios'
 
-import { state } from './config'
+import config from './config'
 
 const useReturning = (action) => {
   const actions = ['insert', 'update', 'delete']
@@ -14,11 +14,11 @@ const mountParameters = (value = {}, callback) => Object.entries(value).reduce((
 ]).join(''), '').slice(0, -2)
 
 const makeRequest = async ({ query, variables }) => {
-  const { data } = await axios.request(state.baseURL, {
+  const { data } = await axios.request(config.state.baseURL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      [state.authorization.key]: state.authorization.value
+      [config.state.authorization.key]: config.state.authorization.value
     },
     data: JSON.stringify({
       query,
@@ -212,6 +212,7 @@ const makeRepository = (module) => {
     : singleQueryOne({ handler: asDelete, props, options })
 
   return {
+    module,
     query,
     mutation,
     find,
@@ -228,7 +229,11 @@ const makeRepository = (module) => {
   }
 }
 
-makeRepository.makeService = ({ query, mutation, ...service }) => service
+makeRepository.makeService = ({ module, query, mutation, ...service }) => {
+  config.addService({ module, service })
+  
+  return service
+}
 
 export {
   makeVariables,
