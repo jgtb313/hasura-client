@@ -35,10 +35,12 @@ client.authenticate(token) // authorization value
 
 Now you can do:
 
-client.user.find({}) // any option from hasura api
-client.user.delete({}) // any option from hasura api
-client.address.findOne({}) // any option from hasura api
-client.product.updateByPk({}) // any option from hasura api
+client.user.me({}) // options from your action
+client.user.login({}) // options from your action
+client.user.find({}) // any options from hasura api
+client.user.delete({}) // any options from hasura api
+client.address.findOne({}) // any options from hasura api
+client.product.updateByPk({}) // any options from hasura api
 ```
 
 ### Configure
