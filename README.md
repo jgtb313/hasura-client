@@ -8,6 +8,10 @@
 import hasuraClient from 'hasura-client'
 
 const User = hasuraClient.repository('user')
+ 
+User.me = User.query('me')
+User.login = User.mutation('login')
+
 const Address = hasuraClient.repository('address')
 const Product = hasuraClient.repository('product')
 
@@ -177,7 +181,7 @@ User.aggregate({
 ### Module additional options
 
 ```
-User.profile = User.query('profile') // connect to your profile action (query)
+User.me = User.query('me') // connect to your me action (query)
 
 User.login = User.mutation('login') // connect to your login action (mutation)
 ```
