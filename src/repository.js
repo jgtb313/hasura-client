@@ -1,12 +1,14 @@
-import { get, isString, isPlainObject } from 'lodash'
+import { get, isString, isPlainObject, omit } from 'lodash'
 import axios from 'axios'
 
-import config from './config'
+import { state } from './config'
 
-const useReturning = (action) => {
+const withReturning = (action) => {
   const actions = ['insert', 'update', 'delete']
   return actions.includes(action)
 }
+
+const withAggregate = (action) => action === 'aggregate'
 
 const mountParameters = (value = {}, callback) => Object.entries(value).reduce((result, [key, value]) => ([
   result,
@@ -14,16 +16,16 @@ const mountParameters = (value = {}, callback) => Object.entries(value).reduce((
 ]).join(''), '').slice(0, -2)
 
 const makeRequest = async ({ query, variables }) => {
-  const { data } = await axios.request(config.state.baseURL, {
+  const { data } = await axios.request(state.baseURL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      [config.state.authorization.key]: config.state.authorization.value
+      [state.authorization.key]: state.authorization.value
     },
     data: JSON.stringify({
       query,
       variables,
-    }),
+    })
   })
 
   if (data.errors) {
@@ -41,7 +43,8 @@ const makeActionName = ({ module, action }) => (({
   update: `update_${module}`,
   updateByPk: `update_${module}_by_pk`,
   delete: `delete_${module}`,
-  deleteByPk: `delete_${module}_by_pk`
+  deleteByPk: `delete_${module}_by_pk`,
+  aggregate: `${module}_aggregate`
 })[action] || action)
 
 const makeParameters = ({ module, variables }) => {
@@ -110,17 +113,20 @@ const makeReturning = ({ action, select }) => {
     }, '{ ').concat(' }')
   }
 
-  return useReturning(action)
+  return withReturning(action)
     ? `{ returning ${returning(select)} }`
     : returning(select)
 }
 
-const makeQuery = (module) => (method) => (action) => ({ select = { id: 1 }, ...variables } = {}, { queryOnly = false } = {}) => {
+const makeQuery = (module) => (method) => (action) => ({ select = { id: 1 }, aggregate, ...variables } = {}, { queryOnly = false } = {}) => {
   const params = {
     module,
     method,
     action,
-    select,
+    select: {
+      ...(aggregate ? omit(select, 'id') : select),
+      aggregate
+    },
     variables
   }
 
@@ -149,11 +155,17 @@ const singleQuery = async ({ module, method, action, select, variables }) => {
     variables: makeVariables({ module, variables })
   })
 
-  const key = useReturning(action)
+  const key = withReturning(action)
     ? `${actionName}.returning`
-    : actionName
+    : withAggregate(action)
+      ? `${actionName}.aggregate`
+      : actionName
 
-  return get(data, key)
+  const value = get(data, key)
+
+  return value === null
+    ? undefined
+    : value
 }
 
 const multiQuery = ({ module, method, action, select, variables }) => {
@@ -169,9 +181,11 @@ const multiQuery = ({ module, method, action, select, variables }) => {
     }
   `
 
-  const key = useReturning(action)
+  const key = withReturning(action)
     ? `${actionName}.returning`
-    : actionName
+    : withAggregate(action)
+      ? `${actionName}.aggregate`
+      : actionName
 
   return {
     module,
@@ -197,22 +211,23 @@ const makeRepository = (module) => {
   const mutation = moduleQuery('mutation')
 
   const find = query('find')
-  const findOne = (props, options) => options.queryOnly
+  const findOne = (props, options = {}) => options.queryOnly
     ? multiQueryOne({ handler: find, props, options })
     : singleQueryOne({ handler: find, props, options })
 
   const update = mutation('update')
-  const updateOne = (props, options) => options.queryOnly
+  const updateOne = (props, options = {}) => options.queryOnly
     ? multiQueryOne({ handler: update, props, options })
     : singleQueryOne({ handler: update, props, options })
 
   const asDelete = mutation('delete')
-  const deleteOne = (props, options) => options.queryOnly
+  const deleteOne = (props, options = {}) => options.queryOnly
     ? multiQueryOne({ handler: asDelete, props, options })
     : singleQueryOne({ handler: asDelete, props, options })
 
+  const aggregate = query('aggregate')
+
   return {
-    module,
     query,
     mutation,
     find,
@@ -225,19 +240,11 @@ const makeRepository = (module) => {
     updateByPk: mutation('updateByPk'),
     delete: asDelete,
     deleteOne,
-    deleteByPk: mutation('deleteByPk')
+    deleteByPk: mutation('deleteByPk'),
+    aggregate
   }
 }
 
-makeRepository.makeService = ({ module, query, mutation, ...service }) => {
-  config.addService({ module, service })
-  
-  return service
-}
-
-export {
-  makeVariables,
-  makeRequest
-}
+export { makeVariables, makeRequest }
 
 export default makeRepository

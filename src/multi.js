@@ -1,7 +1,8 @@
 import { get } from 'lodash'
+
 import { makeVariables, makeRequest } from './repository'
 
-const multi = async (queries) => {
+const multi = async (...queries) => {
   const [template] = queries
 
   const query = queries.map(({ query = '' }) => query).join(' ')
@@ -17,7 +18,12 @@ const multi = async (queries) => {
 
   return Object.keys(data).map((_, index) => {
     const { key } = queries[index]
-    return get(data, key)
+    
+    const value = get(data, key)
+
+    return value === null
+      ? undefined
+      : value
   }, [])
 }
 

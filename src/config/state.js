@@ -3,8 +3,7 @@ const state = {
   authorization: {
     key: 'Authorization',
     value: ''
-  },
-  services: {}
+  }
 }
 
 export default state

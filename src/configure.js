@@ -1,8 +1,8 @@
 import { setState } from './config'
 
 const configure = ({ baseURL, authorization = 'Authorization' }) => {
-  setState('baseURL', baseURL)
-  setState('authorization.key', authorization)
+  baseURL && setState('baseURL', baseURL)
+  authorization && setState('authorization.key', authorization)
 }
 
 export default configure
