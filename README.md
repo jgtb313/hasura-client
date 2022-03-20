@@ -1,12 +1,45 @@
 # Hasura Client
 
-# Usage
+## Usage
+
+### Full Example
+
+```
+import hasuraClient from 'hasura-client'
+
+const User = hasuraClient.repository('user')
+const Address = hasuraClient.repository('address')
+const Product = hasuraClient.repository('product')
+
+const client = hasuraClient.register({
+  User,
+  Address,
+  Product
+})
+
+client.configure({
+  baseURL: '...', // hasura instance
+  authorization: 'x-hasura-admin-secret' // authorization key
+})
+
+const token = await client.user.login({
+  username: '...',
+  password: '...'
+})
+
+client.authenticate(token) // authorization value
+
+Now you can do:
+
+client.user.find({}) // any option from hasura api
+client.user.delete({}) // any option from hasura api
+client.address.findOne({}) // any option from hasura api
+client.product.updateByPk({}) // any option from hasura api
+```
 
 ### Configure
 
 ```
-import client from '...'
-
 client.configure({
   baseURL: '...',
   authorization: 'x-hasura-admin-secret'
@@ -17,8 +50,8 @@ client.configure({
 
 ```
 const token = await client.user.login({
-    username: '...',
-    password: '...'
+  username: '...',
+  password: '...'
 })
 
 client.authenticate(token)
@@ -126,12 +159,25 @@ User.deleteByPk({
     id: true
   }
 })
+
+// only count; sum; avg tested;
+User.aggregate({
+  aggregate: {
+    count: true,
+    sum: {
+      value: true
+    },
+    avg: {
+      value: true
+    }
+  }
+})
 ```
 
 ### Module additional options
 
 ```
-User.profile = User.query('login') // connect to your profile action (query)
+User.profile = User.query('profile') // connect to your profile action (query)
 
 User.login = User.mutation('login') // connect to your login action (mutation)
 ```
@@ -140,8 +186,8 @@ User.login = User.mutation('login') // connect to your login action (mutation)
 
 ```
 const [userData, addressData] = await client.multi([
-    client.user.find({}, { queryOnly: true }),
-    client.address.find({}, { queryOnly: true })
+  client.user.find({}, { queryOnly: true }),
+  client.address.find({}, { queryOnly: true })
 ])
 ```
 
@@ -149,11 +195,11 @@ const [userData, addressData] = await client.multi([
 
 ```
 client.user.find({
-    select: {
-        id: true,
-        name: true,
-        age: 'fields.age' // equal for fields(path: "age")
-    }
+  select: {
+    id: true,
+    name: true,
+    age: 'fields.age' // equal for fields(path: "age")
+  }
 }),
 ```
 
@@ -161,10 +207,10 @@ client.user.find({
 
 ```
 client.user.find({
-    select: {
-        id: true,
-        nameRenamed: 'name'
-    }
+  select: {
+    id: true,
+    nameRenamed: 'name'
+  }
 }),
 ```
 
@@ -172,13 +218,13 @@ client.user.find({
 
 ```
 client.custom({
-    query: `
-        query Query {
-            user {
-                id
-            }
-        }
-    `,
-    variables: {}
+  query: `
+    query Query {
+      user {
+        id
+      }
+    }
+  `,
+  variables: {}
 })
 ```
