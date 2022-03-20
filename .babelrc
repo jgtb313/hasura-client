@@ -1,0 +1,17 @@
+{
+	"sourceMaps": "inline",
+	"presets": [
+		"@babel/env"
+	],
+	"plugins": [
+		"@babel/proposal-class-properties",
+		"syntax-async-functions",
+		"@babel/plugin-transform-runtime"
+	],
+	"env": {
+		"development": {
+			"sourceMaps": "inline",
+			"plugins": ["source-map-support"]
+		}
+	}
+}
