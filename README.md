@@ -66,7 +66,7 @@ client.authenticate(token)
 ### Creating a module
 
 ```
-const User = client.repository('user') // connect to your user table
+const User = hasuraClient.repository('user') // connect to your user table
 ```
 
 ### Module default options
