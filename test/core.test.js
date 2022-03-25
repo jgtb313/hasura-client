@@ -725,7 +725,9 @@ test('path ...', async () => {
   const user = await client.user.findByPk({
     id,
     select: {
-      email: 'path:fields.email'
+      email: {
+        path: 'fields.email'
+      }
     }
   })
 
@@ -748,7 +750,9 @@ test('renaming ...', async () => {
   const user = await client.user.findByPk({
     id,
     select: {
-      nameRenamed: 'rename:name'
+      name: {
+        alias: 'nameRenamed'
+      }
     }
   })
 

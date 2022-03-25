@@ -95,35 +95,36 @@ const makeVariables = ({ module, variables }) => Object.fromEntries(
     .map(([key, value]) => ([`${key}${module.toUpperCase()}`, value]))
 )
 
-const makePath = (value) => {
-  value = value.replace('path:', '')
-
+const makePath = (key, { path: value }) => {
   const [field, ...paths] = value.split('.')
 
   const path = paths.join('.')
 
-  return `${field}(path: "${path}")`
+  return {
+    key,
+    value: `${field}(path: "${path}")`
+  }
 }
 
-const makeRename = (value) => {
-  value = value.replace('rename:', '')
-
-  return value
-}
+const makeRename = (key, { alias }) => ({
+  key: alias,
+  value: key
+})
 
 const makeReturning = ({ action, select }) => {
   const returning = (props, { parentIsNested = false } = {}) => {
     const fields = Object.entries(props).filter(([key, value]) => key !== 'nested' && !!value)
 
-    return fields.reduce((result, [key, value], index) => {
+    return fields.reduce((result, [key, value]) => {
       const isNested = value.hasOwnProperty('nested')
-      const isObject = isPlainObject(value)
-      const isPath = isString(value) && value.startsWith('path:')
-      const isRename = isString(value) && value.startsWith('rename:')
-      const isSimple = !isNested && !isObject && !isPath && !isRename
+      const isValueObject = isPlainObject(value)
+      const isPath = isValueObject && value.hasOwnProperty('path')
+      const isRename = isValueObject && value.hasOwnProperty('alias')
+      const isObject = isValueObject && !isPath && !isRename
+      const isSimple = !isNested && !isValueObject && !isPath && !isRename
 
-      const path = isPath && makePath(value)
-      const rename = isRename && makeRename(value)
+      const path = isPath && makePath(key, value)
+      const rename = isRename && makeRename(key, value)
 
       const nestedParameters = isNested && returning(value.nested, { parentIsNested: true })
       const nested = isNested && `(${nestedParameters.substring(2, nestedParameters.length - 2)})`
@@ -131,9 +132,9 @@ const makeReturning = ({ action, select }) => {
       let formatted = ''
 
       if (isPath) {
-        formatted = `${key}: ${path}`
+        formatted = `${path.key}: ${path.value}`
       } else if (isRename) {
-        formatted = `${key}: ${rename}`
+        formatted = `${rename.key}: ${rename.value}`
       } else if (isNested) {
         formatted = `${key}${nested}`
       } else if (isSimple) {
