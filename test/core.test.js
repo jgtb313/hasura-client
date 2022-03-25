@@ -770,14 +770,21 @@ test('nested ...', async () => {
 
   const user = await client.user.insertOne({ object: userObject })
 
-  const addressObject = {
-    zipcode: '99999-999',
-    user_id: user.id
-  }
+  const addressesObjects = [
+    {
+      zipcode: '99999-999',
+      user_id: user.id
+    },
+    {
+      zipcode: '88888-888',
+      user_id: user.id
+    }
+  ]
 
-  await client.address.insertOne({ object: addressObject })
+  await client.address.insert({ objects: addressesObjects })
 
-  const userWithAddresses = await client.user.find({
+  const userWithAddresses = await client.user.findByPk({
+    id: user.id,
     select: {
       id: true,
       name: true,
@@ -790,15 +797,15 @@ test('nested ...', async () => {
           },
           limit: 5
         },
-        id: true,
         zipcode: true
       }
     }
   })
 
-  console.log(userWithAddresses)
+  const [address] = userWithAddresses.addresses
 
-  expect(10).toBe(10)
+  expect(userWithAddresses.addresses.length).toBe(1)
+  expect(address.zipcode).toBe('99999-999')
 
   await clearDatabase()
 })
