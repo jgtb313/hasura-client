@@ -757,7 +757,7 @@ test('renaming ...', async () => {
   await clearDatabase()
 })
 
-test('select:nested must return', async () => {
+test('nested ...', async () => {
   const client = makeClient()
 
   const userObject = {
