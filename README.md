@@ -204,9 +204,9 @@ client.user.find({
   select: {
     id: true,
     name: true,
-    age: 'fields.age' // equal for fields(path: "age")
+    age: 'path:fields.age' // equal for fields(path: "age")
   }
-}),
+})
 ```
 
 ### Renaming
@@ -215,9 +215,33 @@ client.user.find({
 client.user.find({
   select: {
     id: true,
-    nameRenamed: 'name'
+    nameRenamed: 'rename:name'
   }
-}),
+})
+```
+
+### Nested
+
+```
+client.user.find({
+  select: {
+    id: true,
+    name: true,
+    addresses: {
+      nested: {
+        where: {
+          zipcode: {
+            _eq: '99999-999'
+          }
+        },
+        limit: 5,
+        offset: 0
+      },
+      id: true,
+      zipcode: true
+    }
+  }
+})
 ```
 
 ### Custom
