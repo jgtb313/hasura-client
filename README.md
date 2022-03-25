@@ -204,7 +204,9 @@ client.user.find({
   select: {
     id: true,
     name: true,
-    age: 'path:fields.age' // equal for fields(path: "age")
+    age: {
+      path: 'fields.age'
+    } // equal for fields(path: "age")
   }
 })
 ```
@@ -215,7 +217,9 @@ client.user.find({
 client.user.find({
   select: {
     id: true,
-    nameRenamed: 'rename:name'
+    name: {
+      alias: 'nameRenamed'
+    }
   }
 })
 ```
