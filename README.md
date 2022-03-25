@@ -33,7 +33,7 @@ const token = await client.user.login({
 
 client.authenticate(token) // authorization value
 
-Now you can do:
+Examples:
 
 client.user.me({}) // options from your action
 client.user.login({}) // options from your action
@@ -66,7 +66,7 @@ client.authenticate(token)
 ### Creating a module
 
 ```
-const User = client.repository('user') // connect to your user table
+const User = hasuraClient.repository('user') // connect to your user table
 ```
 
 ### Module default options
