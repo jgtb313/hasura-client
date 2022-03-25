@@ -33,8 +33,12 @@ const CLIENT_DEFAULT_METHODS = [
 
 const makeClient = () => {
   const User = hasuraClient.repository('user')
+  const Address = hasuraClient.repository('address')
 
-  const client = hasuraClient.register({ User })
+  const client = hasuraClient.register({
+    User,
+    Address
+  })
 
   const config = {
     baseURL: BASE_URL,
@@ -54,6 +58,7 @@ const makeClient = () => {
 
 const clearDatabase = async () => {
   const client = makeClient()
+
   await client.user.delete({
     where: {}
   })
@@ -194,6 +199,7 @@ test('find:limit;offset must return ...', async () => {
       name: 'BNM'
     }
   ]
+
   await client.user.insert({ objects })
 
   const users = await client.user.find({
@@ -230,6 +236,7 @@ test('find:order_by must return ...', async () => {
       name: 'VBN'
     }
   ]
+
   await client.user.insert({ objects })
 
   const users = await client.user.find({
@@ -255,7 +262,9 @@ test('find:select must return only name', async () => {
       name: 'ABC'
     }
   ]
+
   await client.user.insert({ objects })
+
   const users = await client.user.find({
     select: {
       name: true
@@ -282,6 +291,7 @@ test('findOne must return ...', async () => {
       name: 'QWE'
     }
   ]
+
   await client.user.insert({ objects })
 
   const user = await client.user.findOne({
@@ -316,6 +326,7 @@ test('findByPk must return ...', async () => {
   const object = {
     name: 'ABC'
   }
+
   const { id } = await client.user.insertOne({ object })
 
   const user = await client.user.findByPk({ id, select: { name: true } })
@@ -366,6 +377,7 @@ test('insertOne must return ...', async () => {
   const object = {
     name: 'ABC'
   }
+  
   const user = await client.user.insertOne({
     object,
     select: {
@@ -694,6 +706,97 @@ test('deleteByPk must return an undefined when non-existent', async () => {
   })
 
   expect(isUndefined(user)).toBe(true)
+})
+
+test('path ...', async () => {
+  const client = makeClient()
+
+  const objects = [
+    {
+      name: 'ABC',
+      fields: {
+        email: 'abc@example.com'
+      }
+    }
+  ]
+
+  const [{ id }] = await client.user.insert({ objects })
+
+  const user = await client.user.findByPk({
+    id,
+    select: {
+      email: 'path:fields.email'
+    }
+  })
+
+  expect(user.email).toBe('abc@example.com')
+
+  await clearDatabase()
+})
+
+test('renaming ...', async () => {
+  const client = makeClient()
+
+  const objects = [
+    {
+      name: 'ABC'
+    }
+  ]
+
+  const [{ id }] = await client.user.insert({ objects })
+
+  const user = await client.user.findByPk({
+    id,
+    select: {
+      nameRenamed: 'rename:name'
+    }
+  })
+
+  expect(user.nameRenamed).toBe('ABC')
+
+  await clearDatabase()
+})
+
+test('select:nested must return', async () => {
+  const client = makeClient()
+
+  const userObject = {
+    name: 'ABC'
+  }
+
+  const user = await client.user.insertOne({ object: userObject })
+
+  const addressObject = {
+    zipcode: '99999-999',
+    user_id: user.id
+  }
+
+  await client.address.insertOne({ object: addressObject })
+
+  const userWithAddresses = await client.user.find({
+    select: {
+      id: true,
+      name: true,
+      addresses: {
+        nested: {
+          where: {
+            zipcode: {
+              _eq: '99999-999'
+            }
+          },
+          limit: 5
+        },
+        id: true,
+        zipcode: true
+      }
+    }
+  })
+
+  console.log(userWithAddresses)
+
+  expect(10).toBe(10)
+
+  await clearDatabase()
 })
 
 test('multi ...', async () => {

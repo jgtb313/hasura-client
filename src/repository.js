@@ -1,4 +1,4 @@
-import { get, isString, isPlainObject, omit } from 'lodash'
+import { get, isPlainObject, omit, isString } from 'lodash'
 import axios from 'axios'
 
 import { state } from './config'
@@ -14,6 +14,24 @@ const mountParameters = (value = {}, callback) => Object.entries(value).reduce((
   result,
   callback({ key, value }),
 ]).join(''), '').slice(0, -2)
+
+const makeKey = ({ action, actionName }) => {
+  const key = withReturning(action)
+    ? `${actionName}.returning`
+    : withAggregate(action)
+      ? `${actionName}.aggregate`
+      : actionName
+
+  return key
+}
+
+const makeValue = ({ data, key }) => {
+  const value = get(data, key)
+
+  return value === null
+    ? undefined
+    : value
+}
 
 const makeRequest = async ({ query, variables }) => {
   const { data } = await axios.request(state.baseURL, {
@@ -78,37 +96,56 @@ const makeVariables = ({ module, variables }) => Object.fromEntries(
 )
 
 const makePath = (value) => {
-  const [field, ...paths] = value.split('.')
+  value = value.replace('path:', '')
 
-  if (!paths.length) {
-    return field
-  }
+  const [field, ...paths] = value.split('.')
 
   const path = paths.join('.')
 
   return `${field}(path: "${path}")`
 }
 
+const makeRename = (value) => {
+  value = value.replace('rename:', '')
+
+  return value
+}
+
 const makeReturning = ({ action, select }) => {
-  const returning = (props) => {
+  const returning = (props, { parentIsNested = false } = {}) => {
     const fields = Object.entries(props).filter(([key, value]) => key !== 'nested' && !!value)
 
     return fields.reduce((result, [key, value], index) => {
       const isNested = value.hasOwnProperty('nested')
-      const isPath = isString(value)
       const isObject = isPlainObject(value)
-      const isLast = fields.length === index + 1
+      const isPath = isString(value) && value.startsWith('path:')
+      const isRename = isString(value) && value.startsWith('rename:')
+      const isSimple = !isNested && !isObject && !isPath && !isRename
 
-      const nestedParameters = `(${mountParameters(value.nested, ({ key, value }) => `${key}: ${value}, `)})`
+      const path = isPath && makePath(value)
+      const rename = isRename && makeRename(value)
 
-      const keyFormat = !isObject && isLast
-        ? isPath ? `${key}: ${makePath(value)}` : isNested ? `${key}${nestedParameters}` : key
-        : isPath ? `${key}: ${makePath(value)} ` : isNested ? `${key}${nestedParameters} ` : `${key} `
+      const nestedParameters = isNested && returning(value.nested, { parentIsNested: true })
+      const nested = isNested && `(${nestedParameters.substring(2, nestedParameters.length - 2)})`
+
+      let formatted = ''
+
+      if (isPath) {
+        formatted = `${key}: ${path}`
+      } else if (isRename) {
+        formatted = `${key}: ${rename}`
+      } else if (isNested) {
+        formatted = `${key}${nested}`
+      } else if (isSimple) {
+        formatted = parentIsNested ? `${key}: ${isString(value) ? `"${value}"` : value}` : `${key} `
+      } else if (isObject) {
+        formatted = parentIsNested ? `${key}:` : key
+      }
 
       return [
         result,
-        isObject ? keyFormat : '',
-        isObject ? returning(value) : keyFormat,
+        isObject ? formatted : '',
+        isObject ? returning(value, { parentIsNested }) : formatted,
       ].join('')
     }, '{ ').concat(' }')
   }
@@ -118,7 +155,7 @@ const makeReturning = ({ action, select }) => {
     : returning(select)
 }
 
-const makeQuery = (module) => (method) => (action) => ({ select = { id: 1 }, aggregate, ...variables } = {}, { queryOnly = false } = {}) => {
+const makeQuery = (module) => (method) => (action) => ({ select = { id: true }, aggregate, ...variables } = {}, { queryOnly = false } = {}) => {
   const params = {
     module,
     method,
@@ -155,17 +192,11 @@ const singleQuery = async ({ module, method, action, select, variables }) => {
     variables: makeVariables({ module, variables })
   })
 
-  const key = withReturning(action)
-    ? `${actionName}.returning`
-    : withAggregate(action)
-      ? `${actionName}.aggregate`
-      : actionName
+  const key = makeKey({ action, actionName })
 
-  const value = get(data, key)
+  const value = makeValue({ data, key })
 
-  return value === null
-    ? undefined
-    : value
+  return value
 }
 
 const multiQuery = ({ module, method, action, select, variables }) => {
@@ -181,11 +212,7 @@ const multiQuery = ({ module, method, action, select, variables }) => {
     }
   `
 
-  const key = withReturning(action)
-    ? `${actionName}.returning`
-    : withAggregate(action)
-      ? `${actionName}.aggregate`
-      : actionName
+  const key = makeKey({ action, actionName })
 
   return {
     module,
@@ -245,6 +272,6 @@ const makeRepository = (module) => {
   }
 }
 
-export { makeVariables, makeRequest }
+export { makeVariables, makeRequest, makeValue }
 
 export default makeRepository
