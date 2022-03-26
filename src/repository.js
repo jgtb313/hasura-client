@@ -74,6 +74,7 @@ const makeParameters = ({ module, variables }) => {
     where: `${module}_bool_exp!`,
     _set: `${module}_set_input!`,
     _append: `${module}_append_input!`,
+    _prepend: `${module}_prepend_input!`,
     _inc: `${module}_inc_input!`,
     order_by: `[${module}_order_by!]`,
     limit: 'Int!',

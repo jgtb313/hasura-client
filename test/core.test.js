@@ -474,6 +474,72 @@ test('update must return ...', async () => {
   await clearDatabase()
 })
 
+test('update:append must return ...', async () => {
+  const client = makeClient()
+
+  const append = {
+    fields: {
+      email: 'email@example.com'
+    }
+  }
+
+  const object = {
+    name: 'ABC',
+    fields: {
+      phone: '99999-9999'
+    }
+  }
+
+  const { id } = await client.user.insertOne({ object })
+
+  const user = await client.user.updateByPk({
+    pk_columns: {
+      id
+    },
+    _append: append,
+    select: {
+      fields: true
+    }
+  })
+
+  expect(Object.keys(user.fields)).toStrictEqual(['email', 'phone'])
+
+  await clearDatabase()
+})
+
+test('update:prepend must return ...', async () => {
+  const client = makeClient()
+
+  const prepend = {
+    fields: {
+      name: 'ABC'
+    }
+  }
+
+  const object = {
+    name: 'ABC',
+    fields: {
+      phone: '99999-9999'
+    }
+  }
+
+  const { id } = await client.user.insertOne({ object })
+
+  const user = await client.user.updateByPk({
+    pk_columns: {
+      id
+    },
+    _prepend: prepend,
+    select: {
+      fields: true
+    }
+  })
+
+  expect(Object.keys(user.fields)).toStrictEqual(['name', 'phone'])
+
+  await clearDatabase()
+})
+
 test('updateOne must return ...', async () => {
   const client = makeClient()
 
