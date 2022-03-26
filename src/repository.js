@@ -10,11 +10,6 @@ const withReturning = (action) => {
 
 const withAggregate = (action) => action === 'aggregate'
 
-const mountParameters = (value = {}, callback) => Object.entries(value).reduce((result, [key, value]) => ([
-  result,
-  callback({ key, value }),
-]).join(''), '').slice(0, -2)
-
 const makeKey = ({ action, actionName }) => {
   const key = withReturning(action)
     ? `${actionName}.returning`
@@ -34,6 +29,8 @@ const makeValue = ({ data, key }) => {
 }
 
 const makeRequest = async ({ query, variables }) => {
+  console.log(query)
+
   const { data } = await axios.request(state.baseURL, {
     method: 'POST',
     headers: {
@@ -81,8 +78,13 @@ const makeParameters = ({ module, variables }) => {
     offset: 'Int!'
   }
 
-  const parametersKeys = mountParameters(variables, ({ key }) => `$${key}${module.toUpperCase()}: ${parameters[key]}, `)
-  const parametersValues = mountParameters(variables, ({ key }) => `${key}: $${key}${module.toUpperCase()}, `)
+  const mountParameters = (callback) => Object.entries(variables).reduce((result, [key, value]) => ([
+    result,
+    callback({ key, value }),
+  ]).join(''), '').slice(0, -2)
+
+  const parametersKeys = mountParameters(({ key }) => `$${key}${module.toUpperCase()}: ${parameters[key]}, `)
+  const parametersValues = mountParameters(({ key }) => `${key}: $${key}${module.toUpperCase()}, `)
 
   return {
     parametersKeys: parametersKeys ? `(${parametersKeys})` : '',
@@ -187,8 +189,6 @@ const singleQuery = async ({ module, method, action, select, variables }) => {
     }
   `
 
-  console.log(query)
-
   const data = await makeRequest({
     query,
     variables: makeVariables({ module, variables })
@@ -208,7 +208,7 @@ const multiQuery = ({ module, method, action, select, variables }) => {
 
   const query = `${actionName}${parametersValues}${returning}`
 
-  const makeTemplate = ({ query, parametersKeys }) => `
+  const make = ({ query, parametersKeys }) => `
     ${method} Query${parametersKeys} {
       ${query}
     }
@@ -222,7 +222,7 @@ const multiQuery = ({ module, method, action, select, variables }) => {
     query,
     variables,
     key,
-    makeTemplate
+    make
   }
 }
 

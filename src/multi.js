@@ -6,7 +6,7 @@ const multi = async (...queries) => {
   const query = queries.map(({ query = '' }) => query).join(' ')
   const parametersKeys = queries.map(({ parametersKeys = '' }) => parametersKeys.slice(1, -1)).join(', ')
 
-  const multiQuery = template.makeTemplate({ query, parametersKeys: parametersKeys ? `(${parametersKeys})` : '' })
+  const multiQuery = template.make({ query, parametersKeys: parametersKeys ? `(${parametersKeys})` : '' })
   const multiVariables = queries.reduce((result, { module, variables }) => ({ ...result, ...makeVariables({ module, variables }) }), {})
 
   const data = await makeRequest({
