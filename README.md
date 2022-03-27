@@ -180,6 +180,14 @@ User.aggregate({
 })
 ```
 
+### Subscription
+
+```
+const { query, variables } = client.user.find({ ...options }, { subscription: true })
+const { query, variables } = client.user.findByPk({ ...options }, { subscription: true })
+const { query, variables } = client.user.aggregate({ ...options }, { subscription: true })
+```
+
 ### Module additional options
 
 ```
@@ -192,8 +200,8 @@ User.login = User.mutation('login') // connect to your login action (mutation)
 
 ```
 const [userData, addressData] = await client.multi([
-  client.user.find({}, { queryOnly: true }),
-  client.address.find({}, { queryOnly: true })
+  client.user.find({}, { multi: true }),
+  client.address.find({}, { multi: true })
 ])
 ```
 
@@ -246,6 +254,12 @@ client.user.find({
     }
   }
 })
+```
+
+### Execute
+
+```
+const { query, variables } = client.user.find({ ...options }, { execute: false })
 ```
 
 ### Custom
