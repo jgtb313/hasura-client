@@ -72,7 +72,7 @@ const User = hasuraClient.repository('user') // connect to your user table
 ### Module default options
 
 ```
-User.find({
+client.user.find({
   where: {},
   limit: 10,
   offset: 10,
@@ -82,35 +82,35 @@ User.find({
   }
 })
 
-User.findOne({
+client.user.findOne({
   where: {},
   select: {
     id: true
   }
 })
 
-User.findByPk({
+client.user.findByPk({
   id: '',
   select: {
     id: true
   }
 })
 
-User.insert({
+client.user.insert({
   objects: [],
   select: {
     id: true
   }
 })
 
-User.insertOne({
+client.user.insertOne({
   object: {},
   select: {
     id: true
   }
 })
 
-User.update({
+client.user.update({
   where: {},
   _set: {},
   _append: {},
@@ -121,7 +121,7 @@ User.update({
   }
 })
 
-User.updateOne({
+client.user.updateOne({
   where: {},
   _set: {},
   _append: {},
@@ -132,7 +132,7 @@ User.updateOne({
   }
 })
 
-User.updateByPk({
+client.user.updateByPk({
   pk_columns: {
     id: ''
   },
@@ -145,21 +145,21 @@ User.updateByPk({
   }
 })
 
-User.delete({
+client.user.delete({
   where: {},
   select: {
     id: true
   }
 })
 
-User.deleteOne({
+client.user.deleteOne({
   where: {},
   select: {
     id: true
   }
 })
 
-User.deleteByPk({
+client.user.deleteByPk({
   id: '',
   select: {
     id: true
@@ -167,7 +167,7 @@ User.deleteByPk({
 })
 
 // only count; sum; avg tested;
-User.aggregate({
+client.user.aggregate({
   aggregate: {
     count: true,
     sum: {
@@ -178,6 +178,14 @@ User.aggregate({
     }
   }
 })
+```
+
+### Subscription
+
+```
+const { query, variables } = client.user.find({ ...options }, { subscription: true })
+const { query, variables } = client.user.findByPk({ ...options }, { subscription: true })
+const { query, variables } = client.user.aggregate({ ...options }, { subscription: true })
 ```
 
 ### Module additional options
@@ -192,8 +200,8 @@ User.login = User.mutation('login') // connect to your login action (mutation)
 
 ```
 const [userData, addressData] = await client.multi([
-  client.user.find({}, { queryOnly: true }),
-  client.address.find({}, { queryOnly: true })
+  client.user.find({}, { multi: true }),
+  client.address.find({}, { multi: true })
 ])
 ```
 
@@ -246,6 +254,12 @@ client.user.find({
     }
   }
 })
+```
+
+### Execute
+
+```
+const { query, variables } = client.user.find({ ...options }, { execute: false })
 ```
 
 ### Custom
