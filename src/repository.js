@@ -1,7 +1,9 @@
-import { get, isPlainObject, omit, isString } from 'lodash'
+import { get, isPlainObject, omit, isString, first } from 'lodash'
 import axios from 'axios'
 
 import { state } from './config'
+
+const isFalsy = (value) => value === false
 
 const withReturning = (action) => {
   const actions = ['insert', 'update', 'delete']
@@ -28,7 +30,7 @@ const makeValue = ({ data, key }) => {
     : value
 }
 
-const makeRequest = async ({ query, variables }) => {
+const makeRequest = async ({ query, variables, key, single = false, multi = false, custom = false }) => {
   console.log(query)
 
   const { data } = await axios.request(state.baseURL, {
@@ -47,7 +49,26 @@ const makeRequest = async ({ query, variables }) => {
     throw new Error(data.errors[0].message)
   }
 
-  return data.data
+  const value = data.data
+
+  if (custom) {
+    return value
+  }
+
+  if (multi) {
+    return Object.keys(value).map((_, index) => {
+      const { key } = multi[index]
+      return makeValue({ data: value, key })
+    })
+  }
+
+  if (single) {
+    return first(
+      makeValue({ data: value, key })
+    )
+  }
+
+  return makeValue({ data: value, key })
 }
 
 const makeActionName = ({ module, action }) => (({
@@ -78,13 +99,13 @@ const makeParameters = ({ module, variables }) => {
     offset: 'Int!'
   }
 
-  const mountParameters = (callback) => Object.entries(variables).reduce((result, [key, value]) => ([
+  const mount = (callback) => Object.entries(variables).reduce((result, [key, value]) => ([
     result,
     callback({ key, value }),
   ]).join(''), '').slice(0, -2)
 
-  const parametersKeys = mountParameters(({ key }) => `$${key}${module.toUpperCase()}: ${parameters[key]}, `)
-  const parametersValues = mountParameters(({ key }) => `${key}: $${key}${module.toUpperCase()}, `)
+  const parametersKeys = mount(({ key }) => `$${key}${module.toUpperCase()}: ${parameters[key]}, `)
+  const parametersValues = mount(({ key }) => `${key}: $${key}${module.toUpperCase()}, `)
 
   return {
     parametersKeys: parametersKeys ? `(${parametersKeys})` : '',
@@ -159,79 +180,58 @@ const makeReturning = ({ action, select }) => {
     : returning(select)
 }
 
-const makeQuery = (module) => (method) => (action) => ({ select = { id: true }, aggregate, ...variables } = {}, { queryOnly = false } = {}) => {
-  const params = {
-    module,
-    method,
-    action,
-    select: {
-      ...(aggregate ? omit(select, 'id') : select),
-      aggregate
-    },
-    variables
+const makeMethod = ({ method, subscription }) => subscription ? 'subscription' : method
+
+const makeQuery = (module) => (method) => (action) => ({ select = { id: true }, aggregate, ...variables } = {}, options = {}) => {
+  const formattedMethod = makeMethod({ method, subscription: options.subscription })
+  const formattedSelect = {
+    ...(aggregate ? omit(select, 'id') : select),
+    aggregate
+  }
+  const formattedVariables = makeVariables({ module, variables })
+  const actionName = makeActionName({ module, action })
+  const { parametersKeys, parametersValues } = makeParameters({ module, variables })
+  const returning = makeReturning({ action, select: formattedSelect })
+  const key = makeKey({ action, actionName })
+
+  const baseQuery = `${actionName}${parametersValues}${returning}`
+  const fullQuery = `
+    ${formattedMethod} Query${parametersKeys} {
+      ${baseQuery}
+    }
+  `
+
+  if (options.multi) {
+    const make = ({ query, parametersKeys }) => `
+      ${method} Query${parametersKeys} {
+        ${query}
+      }
+    `
+
+    return {
+      query: baseQuery,
+      variables: formattedVariables,
+      parametersKeys,
+      key,
+      make,
+      single: options.single
+    }
   }
 
-  const handler = queryOnly
-    ? multiQuery
-    : singleQuery
-
-  return handler(params)
-}
-
-const singleQuery = async ({ module, method, action, select, variables }) => {
-  const actionName = makeActionName({ module, action })
-  const { parametersKeys, parametersValues } = makeParameters({ module, variables })
-  const returning = makeReturning({ action, select })
-
-  const query = `
-    ${method} Query${parametersKeys} {
-      ${actionName}${parametersValues}${returning}
+  if (options.subscription || isFalsy(options.execute)) {
+    return {
+      query: fullQuery,
+      variables: formattedVariables
     }
-  `
+  }
 
-  const data = await makeRequest({
-    query,
-    variables: makeVariables({ module, variables })
-  })
-
-  const key = makeKey({ action, actionName })
-
-  const value = makeValue({ data, key })
-
-  return value
-}
-
-const multiQuery = ({ module, method, action, select, variables }) => {
-  const actionName = makeActionName({ module, action })
-  const { parametersKeys, parametersValues } = makeParameters({ module, variables })
-  const returning = makeReturning({ action, select })
-
-  const query = `${actionName}${parametersValues}${returning}`
-
-  const make = ({ query, parametersKeys }) => `
-    ${method} Query${parametersKeys} {
-      ${query}
-    }
-  `
-
-  const key = makeKey({ action, actionName })
-
-  return {
-    module,
-    parametersKeys,
-    query,
-    variables,
+  return makeRequest({
+    query: fullQuery,
+    variables: formattedVariables,
     key,
-    make
-  }
+    single: options.single
+  })
 }
-
-const singleQueryOne = async ({ handler, props, options }) => {
-  const [response] = await handler(props, options)
-  return response
-}
-
-const multiQueryOne = ({ handler, props, options }) => handler(props, options)
 
 const makeRepository = (module) => {             
   const moduleQuery = makeQuery(module)
@@ -240,19 +240,13 @@ const makeRepository = (module) => {
   const mutation = moduleQuery('mutation')
 
   const find = query('find')
-  const findOne = (props, options = {}) => options.queryOnly
-    ? multiQueryOne({ handler: find, props, options })
-    : singleQueryOne({ handler: find, props, options })
+  const findOne = (props, options = {}) => find(props, { ...options, single: true })
 
   const update = mutation('update')
-  const updateOne = (props, options = {}) => options.queryOnly
-    ? multiQueryOne({ handler: update, props, options })
-    : singleQueryOne({ handler: update, props, options })
+  const updateOne = (props, options = {}) => update(props, { ...options, single: true })
 
   const asDelete = mutation('delete')
-  const deleteOne = (props, options = {}) => options.queryOnly
-    ? multiQueryOne({ handler: asDelete, props, options })
-    : singleQueryOne({ handler: asDelete, props, options })
+  const deleteOne = (props, options = {}) => asDelete(props, { ...options, single: true })
 
   const aggregate = query('aggregate')
 
@@ -274,6 +268,6 @@ const makeRepository = (module) => {
   }
 }
 
-export { makeVariables, makeRequest, makeValue }
+export { makeRequest }
 
 export default makeRepository
