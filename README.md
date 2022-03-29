@@ -22,8 +22,11 @@ const client = hasuraClient.register({
 })
 
 client.configure({
-  baseURL: '...', // hasura instance
-  authorization: 'x-hasura-admin-secret' // authorization key
+  baseURL: '...', // hasura endpoint
+  authorization: 'x-hasura-admin-secret', // authorization key
+  metadata: {}, // hasura metadata
+  actionTablePattern: (action) => action.split('_')[0],
+  logger: true
 })
 
 const token = await client.user.login({
@@ -31,6 +34,9 @@ const token = await client.user.login({
   password: '...'
 })
 
+client.configure({
+  authorization: 'Authorization'
+})
 client.authenticate(token) // authorization value
 
 Examples:
@@ -51,6 +57,11 @@ client.configure({
   authorization: 'x-hasura-admin-secret'
 })
 ```
+
+| Comando | Descrição |
+| --- | --- |
+| `git status` | Lista de todos os arquivos *modificados ou novos* |
+| `git diff` | Mostra as diferenças do arquivo que **não foram** preparadas |
 
 ### Authenticate
 
