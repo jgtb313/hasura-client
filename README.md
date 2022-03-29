@@ -51,17 +51,17 @@ client.product.updateByPk({}) // any options from hasura api
 
 ### Configure
 
+| Comando | Descrição |
+| --- | --- |
+| `git status` | Lista de todos os arquivos *modificados ou novos* |
+| `git diff` | Mostra as diferenças do arquivo que **não foram** preparadas |
+
 ```js
 client.configure({
   baseURL: '...',
   authorization: 'x-hasura-admin-secret'
 })
 ```
-
-| Comando | Descrição |
-| --- | --- |
-| `git status` | Lista de todos os arquivos *modificados ou novos* |
-| `git diff` | Mostra as diferenças do arquivo que **não foram** preparadas |
 
 ### Authenticate
 
