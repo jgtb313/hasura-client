@@ -24,9 +24,6 @@ const client = hasuraClient.register({
 client.configure({
   baseURL: '...', // hasura endpoint
   authorization: 'x-hasura-admin-secret', // authorization key
-  metadata: {}, // hasura metadata
-  actionTablePattern: (action) => action.split('_')[0],
-  logger: true
 })
 
 const token = await client.user.login({
@@ -51,10 +48,9 @@ client.product.updateByPk({}) // any options from hasura api
 
 ### Configure
 
-| Comando | Descrição |
-| --- | --- |
-| `git status` | Lista de todos os arquivos *modificados ou novos* |
-| `git diff` | Mostra as diferenças do arquivo que **não foram** preparadas |
+| Prop | Default | Required | Description
+| --- | --- | --- | --- |
+| baseURL | undefined | true | hasura endpoint |
 
 ```js
 client.configure({
