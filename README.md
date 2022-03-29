@@ -4,7 +4,7 @@
 
 ### Full Example
 
-```
+```js
 import hasuraClient from 'hasura-client'
 
 const User = hasuraClient.repository('user')
@@ -45,7 +45,7 @@ client.product.updateByPk({}) // any options from hasura api
 
 ### Configure
 
-```
+```js
 client.configure({
   baseURL: '...',
   authorization: 'x-hasura-admin-secret'
@@ -54,7 +54,7 @@ client.configure({
 
 ### Authenticate
 
-```
+```js
 const token = await client.user.login({
   username: '...',
   password: '...'
@@ -65,13 +65,13 @@ client.authenticate(token)
 
 ### Creating a module
 
-```
+```js
 const User = hasuraClient.repository('user') // connect to your user table
 ```
 
 ### Module default options
 
-```
+```js
 client.user.find({
   where: {},
   limit: 10,
@@ -182,7 +182,7 @@ client.user.aggregate({
 
 ### Subscription
 
-```
+```js
 const { query, variables } = client.user.find({ ...options }, { subscription: true })
 const { query, variables } = client.user.findByPk({ ...options }, { subscription: true })
 const { query, variables } = client.user.aggregate({ ...options }, { subscription: true })
@@ -190,7 +190,7 @@ const { query, variables } = client.user.aggregate({ ...options }, { subscriptio
 
 ### Module additional options
 
-```
+```js
 User.me = User.query('me') // connect to your me action (query)
 
 User.login = User.mutation('login') // connect to your login action (mutation)
@@ -198,7 +198,7 @@ User.login = User.mutation('login') // connect to your login action (mutation)
 
 ### Multi
 
-```
+```js
 const [userData, addressData] = await client.multi([
   client.user.find({}, { multi: true }),
   client.address.find({}, { multi: true })
@@ -207,7 +207,7 @@ const [userData, addressData] = await client.multi([
 
 ### Path
 
-```
+```js
 client.user.find({
   select: {
     id: true,
@@ -221,7 +221,7 @@ client.user.find({
 
 ### Renaming
 
-```
+```js
 client.user.find({
   select: {
     id: true,
@@ -234,7 +234,7 @@ client.user.find({
 
 ### Nested
 
-```
+```js
 client.user.find({
   select: {
     id: true,
@@ -258,13 +258,13 @@ client.user.find({
 
 ### Execute
 
-```
+```js
 const { query, variables } = client.user.find({ ...options }, { execute: false })
 ```
 
 ### Custom
 
-```
+```js
 client.custom({
   query: `
     query Query {
