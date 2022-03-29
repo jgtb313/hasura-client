@@ -51,6 +51,10 @@ client.product.updateByPk({}) // any options from hasura api
 | Prop | Default | Required | Description
 | --- | --- | --- | --- |
 | baseURL | undefined | true | hasura endpoint |
+| authorization | Authorization | false | Authorization key |
+| metadata | undefined | false | hasura metadata |
+| actionTablePattern | undefined | false | callback |
+| logger | true | false | hasura endpoint |
 
 ```js
 client.configure({
