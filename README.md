@@ -202,10 +202,10 @@ User.login = User.mutation('login') // connect to your login action (mutation)
 ### Multi
 
 ```js
-const [userData, addressData] = await client.multi([
+const [userData, addressData] = await client.multi(
   client.user.find({}, { multi: true }),
   client.address.find({}, { multi: true })
-])
+)
 ```
 
 ### Path
